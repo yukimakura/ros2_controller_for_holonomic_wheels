@@ -20,8 +20,9 @@ colcon build
 [メカナムホイールロボットの制御](https://sgrsn1711.hatenablog.com/entry/2019/01/13/002459)
 [ros2_controllers/diff_drive_controller](https://github.com/ros-controls/ros2_controllers/tree/humble/diff_drive_controller)
 
-## Lisence
+## Lisence   
 Apache License 2.0
+
 ---
 ## ビルド＆インストール
 1. 任意のワークスペースにこのレポジトリをクローンします。
