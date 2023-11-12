@@ -17,8 +17,8 @@ colcon build
 [Please refer to the description in quadomni_drive_controller_parameter.yaml](https://github.com/yukimakura/ros2_controller_for_holonomic_wheels/blob/master/quadomni_drive_controller/src/quadomni_drive_controller_parameter.yaml)
 
 ## Reference
-[メカナムホイールロボットの制御](https://sgrsn1711.hatenablog.com/entry/2019/01/13/002459)
-[ros2_controllers/diff_drive_controller](https://github.com/ros-controls/ros2_controllers/tree/humble/diff_drive_controller)
+[メカナムホイールロボットの制御](https://sgrsn1711.hatenablog.com/entry/2019/01/13/002459)   
+[ros2_controllers/diff_drive_controller](https://github.com/ros-controls/ros2_controllers/tree/humble/diff_drive_controller)   
 
 ## Lisence   
 Apache License 2.0
@@ -40,8 +40,8 @@ colcon build
 [quadomni_drive_controller_parameter.yamlのディスクリプションを参考にしてください](https://github.com/yukimakura/ros2_controller_for_holonomic_wheels/blob/master/quadomni_drive_controller/src/quadomni_drive_controller_parameter.yaml)
 
 ## 参考
-[メカナムホイールロボットの制御](https://sgrsn1711.hatenablog.com/entry/2019/01/13/002459)
-[ros2_controllers/diff_drive_controller](https://github.com/ros-controls/ros2_controllers/tree/humble/diff_drive_controller)
+[メカナムホイールロボットの制御](https://sgrsn1711.hatenablog.com/entry/2019/01/13/002459)   
+[ros2_controllers/diff_drive_controller](https://github.com/ros-controls/ros2_controllers/tree/humble/diff_drive_controller)   
 
 ## ライセンス
 Apache License 2.0
