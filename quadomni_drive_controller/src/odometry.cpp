@@ -75,7 +75,7 @@ namespace quadomni_drive_controller
 
         Eigen::Vector4d wheelvec(fr_vel , fl_vel , rl_vel , rr_vel );
         
-        auto frameMathTerm = -1.0 / (wheel_width_separation_ / 2.0 + wheel_height_separation_ / 2.0);
+        auto frameMathTerm = 1.0 / (wheel_width_separation_ / 2.0 + wheel_height_separation_ / 2.0);
         Eigen::MatrixXd wheelmat(3, 4);
         wheelmat << 1.0, -1.0, -1.0, 1.0,
             1.0, 1.0, -1.0, -1.0,
