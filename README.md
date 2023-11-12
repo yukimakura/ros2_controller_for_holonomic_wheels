@@ -1,6 +1,9 @@
 # ros2_controller_for_holonomic_wheels
 ros2_controller for holonomic wheels  (ex: omni wheels or mechanum wheels)
 
+
+[![demomovie](http://img.youtube.com/vi/XnKu0cl6t8U/0.jpg)](https://www.youtube.com/watch?v=XnKu0cl6t8U)
+
 ## Build & Install
 1. clone this repository to any workspace.
 2. resolve dependencies with `rosdep`
