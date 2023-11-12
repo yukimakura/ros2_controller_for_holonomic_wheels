@@ -7,9 +7,6 @@ test_quadomni_drive_controller:
     wheel_width_separation: 0.10
     wheel_height_separation: 0.10
     wheel_radius: 0.025
-    wheel_separation_multiplier: 1.0
-    left_wheel_radius_multiplier: 1.0
-    right_wheel_radius_multiplier: 1.0
     tf_frame_prefix_enable: true
     tf_frame_prefix: ""
     odom_frame_id: "odom"

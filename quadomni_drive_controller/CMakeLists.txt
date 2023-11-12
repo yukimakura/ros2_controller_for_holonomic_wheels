@@ -84,6 +84,12 @@ install(
   DIRECTORY include/
   DESTINATION include/quadomni_drive_controller
 )
+
+# for Test
+install(
+  DIRECTORY test/
+  DESTINATION share/quadomni_drive_controller/test
+)
 install(TARGETS quadomni_drive_controller quadomni_drive_controller_parameters
   EXPORT export_quadomni_drive_controller
   RUNTIME DESTINATION bin

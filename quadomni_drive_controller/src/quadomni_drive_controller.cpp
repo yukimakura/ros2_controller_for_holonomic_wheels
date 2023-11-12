@@ -255,7 +255,6 @@ namespace quadomni_drive_controller
             1.0, -1.0, wheel_width_separation / 2.0 + wheel_height_separation / 2.0;
 
         Eigen::Vector3d inputvec(linear_x_command, linear_y_command, angular_command);
-        RCLCPP_INFO_STREAM(logger, "input: " << inputvec);
 
         auto outputVec = wheelmat * inputvec;
 
