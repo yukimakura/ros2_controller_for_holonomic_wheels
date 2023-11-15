@@ -17,7 +17,7 @@ colcon build
 4. do `source install/setup.*sh` (the `*sh` part depends on your environment)
 
 ## About parameters
-[Please refer to the description in quadomni_drive_controller_parameter.yaml](https://github.com/yukimakura/ros2_controller_for_holonomic_wheels/blob/master/quadomni_drive_controller/src/quadomni_drive_controller_parameter.yaml)
+[Please refer to the description in omni_4wd_controller_parameter.yaml](https://github.com/yukimakura/ros2_controller_for_holonomic_wheels/blob/master/omni_4wd_controller/src/omni_4wd_controller_parameter.yaml)
 
 ## Reference
 [メカナムホイールロボットの制御](https://sgrsn1711.hatenablog.com/entry/2019/01/13/002459)   
@@ -40,7 +40,7 @@ colcon build
 4. `source install/setup.*sh`します (`*sh`の部分は各自の環境に依存)
 
 ## パラメータについて
-[quadomni_drive_controller_parameter.yamlのディスクリプションを参考にしてください](https://github.com/yukimakura/ros2_controller_for_holonomic_wheels/blob/master/quadomni_drive_controller/src/quadomni_drive_controller_parameter.yaml)
+[omni_4wd_controller_parameter.yamlのディスクリプションを参考にしてください](https://github.com/yukimakura/ros2_controller_for_holonomic_wheels/blob/master/omni_4wd_controller/src/omni_4wd_controller_parameter.yaml)
 
 ## 参考
 [メカナムホイールロボットの制御](https://sgrsn1711.hatenablog.com/entry/2019/01/13/002459)   
@@ -51,7 +51,7 @@ Apache License 2.0
 
 ## configの例 (config example)
 ``` yaml
-test_quadomni_drive_controller:
+test_omni_4wd_controller:
   ros__parameters:
     front_right_wheel_name: "front_right_wheel_motor_shaft_joint"
     front_left_wheel_name: "front_left_wheel_motor_shaft_joint"
