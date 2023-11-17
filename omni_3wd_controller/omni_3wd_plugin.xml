@@ -1,0 +1,10 @@
+<library path="omni_3wd_controller">
+  <class name="omni_3wd_controller/Omni3WDController"
+    type="omni_3wd_controller::Omni3WDController"
+    base_class_type="controller_interface::ControllerInterface">
+    <description>
+      The controller transforms linear and angular velocity messages into signals for each wheel(s)
+      for a quad omni wheel drive robot.
+    </description>
+  </class>
+</library>

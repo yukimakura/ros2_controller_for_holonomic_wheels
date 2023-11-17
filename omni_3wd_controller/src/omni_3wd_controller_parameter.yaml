@@ -1,13 +1,8 @@
-omni_4wd_controller:
-  front_left_wheel_name: {
+omni_3wd_controller:
+  front_wheel_name: {
     type: string,
     default_value: "",
-    description: "Link names of the front left side wheels",
-  }
-  front_right_wheel_name: {
-    type: string,
-    default_value: "",
-    description: "Link names of the front right side wheels",
+    description: "Link names of the front side wheels",
   }
   rear_left_wheel_name: {
     type: string,
@@ -19,15 +14,10 @@ omni_4wd_controller:
     default_value: "",
     description: "Link names of the rear right side wheels",
   }
-  wheel_width_separation: {
+  wheel_separation_from_robot_center: {
     type: double,
     default_value: 0.0,
-    description: "Distance between the center of the front right wheel and the center of the front left wheel. (meter) If this parameter is incorrect, the robot will not operate correctly.",
-  }
-  wheel_height_separation: {
-    type: double,
-    default_value: 0.0,
-    description: "Distance between the center of the front right wheel and the center of the rear right wheel. (meter) If this parameter is incorrect, the robot will not operate correctly.",
+    description: "Distance from the center of the robot to the center of each wheel. (meters) If this parameter is incorrect, the robot will not operate properly.",
   }
   wheel_radius: {
     type: double,
@@ -73,16 +63,6 @@ omni_4wd_controller:
     type: bool,
     default_value: true,
     description: "Is there position feedback from hardware.",
-  }
-  position_feedback_slip_xy_coefficient: {
-    type: double,
-    default_value: 1.0,
-    description: "Multiplication factor of x-coordinate and y-coordinate during position feedback.",
-  }
-  position_feedback_slip_yaw_coefficient: {
-    type: double,
-    default_value: 1.0,
-    description: "Multiplication factor for yaw angle during position feedback.",
   }
   enable_odom_tf: {
     type: bool,

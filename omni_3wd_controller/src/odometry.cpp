@@ -1,7 +1,7 @@
-#include "omni_4wd_controller/odometry.hpp"
+#include "omni_3wd_controller/odometry.hpp"
 #include "Eigen/Core"
 #include "Eigen/LU"
-namespace omni_4wd_controller
+namespace omni_3wd_controller
 {
     Odometry::Odometry(size_t velocity_rolling_window_size)
         : timestamp_(0.0),
@@ -11,15 +11,11 @@ namespace omni_4wd_controller
           linear_x_(0.0),
           linear_y_(0.0),
           angular_(0.0),
-          wheel_width_separation_(0.0),
-          wheel_height_separation_(0.0),
+          wheel_separation_from_robot_center_(0.0),
           wheel_radius_(0.0),
-          fr_wheel_old_pos_(0.0),
-          fl_wheel_old_pos_(0.0),
-          rr_wheel_old_pos_(0.0),
-          rl_wheel_old_pos_(0.0),
-          position_feedback_slip_yaw_coefficient_(0.0),
-          position_feedback_slip_xy_coefficient_(0.0),
+          front_wheel_old_pos_(0.0),
+          rear_left_wheel_old_pos_(0.0),
+          rear_right_wheel_old_pos_(0.0),
           velocity_rolling_window_size_(velocity_rolling_window_size),
           linear_x_accumulator_(velocity_rolling_window_size),
           linear_y_accumulator_(velocity_rolling_window_size),
@@ -34,7 +30,7 @@ namespace omni_4wd_controller
         timestamp_ = time;
     }
 
-    bool Odometry::update(double fr_pos, double rr_pos, double fl_pos, double rl_pos, const rclcpp::Time &time)
+    bool Odometry::update(double front_pos, double rear_right_pos, double rear_left_pos, const rclcpp::Time &time)
     {
         // We cannot estimate the speed with very small time intervals:
         const double dt = time.seconds() - timestamp_.seconds();
@@ -44,53 +40,59 @@ namespace omni_4wd_controller
         }
 
         // Get current wheel joint positions:
-        const double fr_wheel_cur_pos = fr_pos * wheel_radius_;
-        const double fl_wheel_cur_pos = fl_pos * wheel_radius_;
-        const double rr_wheel_cur_pos = rr_pos * wheel_radius_;
-        const double rl_wheel_cur_pos = rl_pos * wheel_radius_;
+        const double f_wheel_cur_pos = front_pos * wheel_radius_;
+        const double rr_wheel_cur_pos = rear_right_pos * wheel_radius_;
+        const double rl_wheel_cur_pos = rear_left_pos * wheel_radius_;
 
         // Estimate velocity of wheels using old and current position:
-        const double fr_wheel_est_vel = fr_wheel_cur_pos - fr_wheel_old_pos_;
-        const double fl_wheel_est_vel = fl_wheel_cur_pos - fl_wheel_old_pos_;
-        const double rr_wheel_est_vel = rr_wheel_cur_pos - rr_wheel_old_pos_;
-        const double rl_wheel_est_vel = rl_wheel_cur_pos - rl_wheel_old_pos_;
+        const double f_wheel_est_vel = f_wheel_cur_pos - front_wheel_old_pos_;
+        const double rr_wheel_est_vel = rr_wheel_cur_pos - rear_right_wheel_old_pos_;
+        const double rl_wheel_est_vel = rl_wheel_cur_pos - rear_left_wheel_old_pos_;
 
         // Update old position with current:
-        fr_wheel_old_pos_ = fr_wheel_cur_pos;
-        fl_wheel_old_pos_ = fl_wheel_cur_pos;
-        rr_wheel_old_pos_ = rr_wheel_cur_pos;
-        rl_wheel_old_pos_ = rl_wheel_cur_pos;
-
+        front_wheel_old_pos_ = f_wheel_cur_pos;
+        rear_right_wheel_old_pos_ = rr_wheel_cur_pos;
+        rear_left_wheel_old_pos_ = rl_wheel_cur_pos;
+        
         updateFromVelocity(
-            fr_wheel_est_vel,
+            f_wheel_est_vel,
             rr_wheel_est_vel,
-            fl_wheel_est_vel,
             rl_wheel_est_vel,
             time);
 
         return true;
     }
 
-    bool Odometry::updateFromVelocity(double fr_vel, double rr_vel, double fl_vel, double rl_vel, const rclcpp::Time &time)
+    bool Odometry::updateFromVelocity(double front_vel, double rear_right_vel, double rear_left_vel, const rclcpp::Time &time)
     {
         const double dt = time.seconds() - timestamp_.seconds();
 
-        Eigen::Vector4d wheelvec(fr_vel, fl_vel, rl_vel, rr_vel);
+        Eigen::Vector3d wheelvec(front_vel , rear_left_vel , rear_right_vel );
+        
+        /*
+                          ↑ twist.linear.x
+                      ←  --
+                          /\
+                         /  \         →twist.linear.y
+                        /    \
+                       /------\ ↑
+                      \        /
+                       ↓
+        
+        */
+        Eigen::MatrixXd wheelmat(3,3);
+        wheelmat << 
+                    0.0                 ,-1      ,wheel_separation_from_robot_center_,
+                    1.0 * sin(M_PI/3.0),0.5     ,wheel_separation_from_robot_center_,
+                    -1.0 * sin(M_PI/3.0) ,0.5     ,wheel_separation_from_robot_center_;
 
-        auto frameMathTerm = -1.0 / (wheel_width_separation_ / 2.0 + wheel_height_separation_ / 2.0);
-        Eigen::MatrixXd wheelmat(3, 4);
-        wheelmat << 1.0, -1.0, -1.0, 1.0,
-            1.0, 1.0, -1.0, -1.0,
-            frameMathTerm, frameMathTerm, frameMathTerm, frameMathTerm;
-
-        auto outputVec = (1.0 / 4.0) * wheelmat * wheelvec;
-        // auto outputVecWithTf = tfmat.transposeInPlace() * outputVec;
+        auto outputVec = wheelmat.inverse() * wheelvec;
 
         //  Compute linear and angular diff:
-        const double linear_x = position_feedback_slip_xy_coefficient_ * outputVec[0] * cos(angular_);
-        const double linear_y = position_feedback_slip_xy_coefficient_ * outputVec[1] * sin(angular_);
+        const double linear_x = outputVec[0];
+        const double linear_y = outputVec[1];
         // Now there is a bug about scout angular velocity
-        const double angular = position_feedback_slip_yaw_coefficient_ * outputVec[2];
+        const double angular = -1.0 * outputVec[2];
 
         // Integrate odometry:
         integrateExact(linear_x, linear_y, angular);
@@ -129,10 +131,9 @@ namespace omni_4wd_controller
         heading_ = 0.0;
     }
 
-    void Odometry::setWheelParams(double wheel_width_separation, double wheel_height_separation, double wheel_radius)
+    void Odometry::setWheelParams(double wheel_separation_from_robot_center, double wheel_radius)
     {
-        wheel_width_separation_ = wheel_width_separation;
-        wheel_height_separation_ = wheel_height_separation;
+        wheel_separation_from_robot_center_ = wheel_separation_from_robot_center;
         wheel_radius_ = wheel_radius;
     }
 
@@ -173,10 +174,4 @@ namespace omni_4wd_controller
         angular_accumulator_ = RollingMeanAccumulator(velocity_rolling_window_size_);
     }
 
-    void Odometry::setFeedbackSlipCoefficient(double position_feedback_slip_xy_coefficient, double position_feedback_slip_yaw_coefficient)
-    {
-        position_feedback_slip_xy_coefficient_ = position_feedback_slip_xy_coefficient;
-        position_feedback_slip_yaw_coefficient_ = position_feedback_slip_yaw_coefficient;
-    }
-
-} // namespace omni_4wd_controller
+} // namespace omni_3wd_controller

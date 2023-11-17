@@ -1,0 +1,23 @@
+{
+  "configurations": [
+    {
+      "browse": {
+        "databaseFilename": "${default}",
+        "limitSymbolsToIncludedHeaders": false
+      },
+      "includePath": [
+        "/home/yukimakura/holonomic_wheel_ros2_controllers_ws/install/omni_4wd_controller/include/**",
+        "/opt/ros/humble/include/**",
+        "/home/yukimakura/holonomic_wheel_ros2_controllers_ws/src/omni_3wd_controller/include/**",
+        "/home/yukimakura/holonomic_wheel_ros2_controllers_ws/src/omni_4wd_controller/include/**",
+        "/usr/include/**"
+      ],
+      "name": "ROS",
+      "intelliSenseMode": "gcc-x64",
+      "compilerPath": "/usr/bin/gcc",
+      "cStandard": "gnu11",
+      "cppStandard": "c++14"
+    }
+  ],
+  "version": 4
+}

@@ -6,7 +6,7 @@
 #include "rclcpp/time.hpp"
 #include "rcpputils/rcppmath/rolling_mean_accumulator.hpp"
 
-namespace omni_4wd_controller
+namespace omni_3wd_controller
 {
     class Odometry
     {
@@ -14,8 +14,8 @@ namespace omni_4wd_controller
         explicit Odometry(size_t velocity_rolling_window_size = 10);
 
         void init(const rclcpp::Time &time);
-        bool update(double fr_pos, double rr_pos,double fl_pos, double rl_pos, const rclcpp::Time &time);
-        bool updateFromVelocity(double fr_vel, double rr_vel, double fl_vel, double rl_vel, const rclcpp::Time &time);
+        bool update(double front_pos, double rear_right_pos, double rear_left_pos, const rclcpp::Time &time);
+        bool updateFromVelocity(double front_vel, double rear_right_vel, double rear_left_vel, const rclcpp::Time &time);
         void updateOpenLoop(double linear_x,double linear_y, double angular, const rclcpp::Time &time);
         void resetOdometry();
 
@@ -26,8 +26,7 @@ namespace omni_4wd_controller
         double getLinearY() const { return linear_y_; }
         double getAngular() const { return angular_; }
 
-        void setWheelParams(double wheel_width_separation,double wheel_height_separation, double wheel_radius);
-        void setFeedbackSlipCoefficient(double position_feedback_slip_xy_coefficient,double position_feedback_slip_yaw_coefficient);
+        void setWheelParams(double wheel_separation_from_robot_center, double wheel_radius);
         void setVelocityRollingWindowSize(size_t velocity_rolling_window_size);
 
     private:
@@ -51,18 +50,13 @@ namespace omni_4wd_controller
         double angular_; // [rad/s]
 
         // Wheel kinematic parameters [m]:
-        double wheel_width_separation_;
-        double wheel_height_separation_;
+        double wheel_separation_from_robot_center_;
         double wheel_radius_;
 
-        double position_feedback_slip_xy_coefficient_;
-        double position_feedback_slip_yaw_coefficient_;
-
         // Previous wheel position/state [rad]:
-        double fr_wheel_old_pos_;
-        double fl_wheel_old_pos_;
-        double rr_wheel_old_pos_;
-        double rl_wheel_old_pos_;
+        double front_wheel_old_pos_;
+        double rear_right_wheel_old_pos_;
+        double rear_left_wheel_old_pos_;
 
         // Rolling mean accumulators for the linear and angular velocities:
         size_t velocity_rolling_window_size_;

@@ -4,7 +4,7 @@
 #include <utility>
 #include <vector>
 
-#include "omni_4wd_controller/omni_4wd_controller.hpp"
+#include "omni_3wd_controller/omni_3wd_controller.hpp"
 #include "controller_interface/controller_interface_base.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
@@ -22,7 +22,7 @@ namespace
     constexpr auto DEFAULT_TRANSFORM_TOPIC = "/tf";
 } // namespace
 
-namespace omni_4wd_controller
+namespace omni_3wd_controller
 {
     using namespace std::chrono_literals;
     using controller_interface::interface_configuration_type;
@@ -31,14 +31,14 @@ namespace omni_4wd_controller
     using hardware_interface::HW_IF_VELOCITY;
     using lifecycle_msgs::msg::State;
 
-    const char *Omni4WDController::feedback_type() const
+    const char *Omni3WDController::feedback_type() const
     {
         return params_.position_feedback ? HW_IF_POSITION : HW_IF_VELOCITY;
     }
 
-    Omni4WDController::Omni4WDController() : controller_interface::ControllerInterface() {}
+    Omni3WDController::Omni3WDController() : controller_interface::ControllerInterface() {}
 
-    controller_interface::CallbackReturn Omni4WDController::on_init()
+    controller_interface::CallbackReturn Omni3WDController::on_init()
     {
         try
         {
@@ -55,22 +55,20 @@ namespace omni_4wd_controller
         return controller_interface::CallbackReturn::SUCCESS;
     }
 
-    controller_interface::InterfaceConfiguration Omni4WDController::command_interface_configuration() const
+    controller_interface::InterfaceConfiguration Omni3WDController::command_interface_configuration() const
     {
         std::vector<std::string> conf_names;
-        conf_names.push_back(params_.front_left_wheel_name + "/" + HW_IF_VELOCITY);
-        conf_names.push_back(params_.front_right_wheel_name + "/" + HW_IF_VELOCITY);
+        conf_names.push_back(params_.front_wheel_name + "/" + HW_IF_VELOCITY);
         conf_names.push_back(params_.rear_left_wheel_name + "/" + HW_IF_VELOCITY);
         conf_names.push_back(params_.rear_right_wheel_name + "/" + HW_IF_VELOCITY);
 
         return {controller_interface::interface_configuration_type::INDIVIDUAL, conf_names};
     }
 
-    controller_interface::InterfaceConfiguration Omni4WDController::state_interface_configuration() const
+    controller_interface::InterfaceConfiguration Omni3WDController::state_interface_configuration() const
     {
         std::vector<std::string> conf_names;
-        conf_names.push_back(params_.front_left_wheel_name + "/" + feedback_type());
-        conf_names.push_back(params_.front_right_wheel_name + "/" + feedback_type());
+        conf_names.push_back(params_.front_wheel_name + "/" + feedback_type());
         conf_names.push_back(params_.rear_left_wheel_name + "/" + feedback_type());
         conf_names.push_back(params_.rear_right_wheel_name + "/" + feedback_type());
 
@@ -81,7 +79,7 @@ namespace omni_4wd_controller
     /// @param time
     /// @param period
     /// @return
-    controller_interface::return_type Omni4WDController::update(
+    controller_interface::return_type Omni3WDController::update(
         const rclcpp::Time &time, const rclcpp::Duration &period)
     {
         auto logger = get_node()->get_logger();
@@ -129,8 +127,7 @@ namespace omni_4wd_controller
         previous_update_timestamp_ = time;
 
         // Apply (possibly new) multipliers:
-        const double wheel_width_separation = params_.wheel_width_separation;
-        const double wheel_height_separation = params_.wheel_height_separation;
+        const double wheel_separation_from_robot_center = params_.wheel_separation_from_robot_center;
         const double wheel_radius = params_.wheel_radius;
 
         if (params_.open_loop)
@@ -139,13 +136,11 @@ namespace omni_4wd_controller
         }
         else
         {
-            double fl_feedback = registered_front_left_wheel_handles_->feedback.get().get_value();
-            double fr_feedback = registered_front_right_wheel_handles_->feedback.get().get_value();
+            double f_feedback = registered_front_wheel_handles_->feedback.get().get_value();
             double rl_feedback = registered_rear_left_wheel_handles_->feedback.get().get_value();
             double rr_feedback = registered_rear_right_wheel_handles_->feedback.get().get_value();
 
-            if (std::isnan(fl_feedback) ||
-                std::isnan(fr_feedback) ||
+            if (std::isnan(f_feedback) ||
                 std::isnan(rl_feedback) ||
                 std::isnan(rr_feedback))
             {
@@ -157,18 +152,16 @@ namespace omni_4wd_controller
             {
 
                 odometry_.update(
-                    fr_feedback,
+                    f_feedback,
                     rr_feedback,
-                    fl_feedback,
                     rl_feedback,
                     time);
             }
             else
             {
                 odometry_.updateFromVelocity(
-                    fr_feedback * wheel_radius * period.seconds(),
+                    f_feedback * wheel_radius * period.seconds(),
                     rr_feedback * wheel_radius * period.seconds(),
-                    fl_feedback * wheel_radius * period.seconds(),
                     rl_feedback * wheel_radius * period.seconds(),
                     time);
             }
@@ -248,25 +241,34 @@ namespace omni_4wd_controller
         }
 
         // Compute wheels velocities:
-        Eigen::MatrixXd wheelmat(4, 3);
-        wheelmat << 1.0, 1.0, wheel_width_separation / 2.0 + wheel_height_separation / 2.0,
-            -1.0, 1.0, (wheel_width_separation / 2.0 + wheel_height_separation / 2.0),
-            -1.0, -1.0, (wheel_width_separation / 2.0 + wheel_height_separation / 2.0),
-            1.0, -1.0, wheel_width_separation / 2.0 + wheel_height_separation / 2.0;
+        /*
+                          ↑ twist.linear.x
+                      ←  --
+                          /\
+                         /  \         →twist.linear.y
+                        /    \
+                       /------\ ↑
+                      \        /
+                       ↓
+        
+        */
+        Eigen::MatrixXd wheelmat(3, 3);
+        wheelmat << 
+                    0.0                 ,-1      ,wheel_separation_from_robot_center,
+                    1.0 * sin(M_PI/3.0),0.5     ,wheel_separation_from_robot_center,
+                    -1.0 * sin(M_PI/3.0) ,0.5     ,wheel_separation_from_robot_center;
 
         Eigen::Vector3d inputvec(linear_x_command, linear_y_command, -1 * angular_command);
 
         auto outputVec = wheelmat * inputvec;
 
-        auto fr = outputVec[0] / wheel_radius;
-        auto fl = outputVec[1] / wheel_radius;
-        auto rl = outputVec[2] / wheel_radius;
-        auto rr = outputVec[3] / wheel_radius;
+        auto f = outputVec[0] / wheel_radius;
+        auto rl = outputVec[1] / wheel_radius;
+        auto rr = outputVec[2] / wheel_radius;
         try
         {
 
-            registered_front_left_wheel_handles_->velocity.get().set_value(fl);
-            registered_front_right_wheel_handles_->velocity.get().set_value(fr);
+            registered_front_wheel_handles_->velocity.get().set_value(f);
             registered_rear_left_wheel_handles_->velocity.get().set_value(rl);
             registered_rear_right_wheel_handles_->velocity.get().set_value(rr);
         }
@@ -278,7 +280,7 @@ namespace omni_4wd_controller
         return controller_interface::return_type::OK;
     }
 
-    controller_interface::CallbackReturn Omni4WDController::on_configure(
+    controller_interface::CallbackReturn Omni3WDController::on_configure(
         const rclcpp_lifecycle::State &)
     {
         auto logger = get_node()->get_logger();
@@ -290,14 +292,9 @@ namespace omni_4wd_controller
             RCLCPP_INFO(logger, "Parameters were updated");
         }
 
-        if (params_.front_right_wheel_name == "")
+        if (params_.front_wheel_name == "")
         {
-            RCLCPP_ERROR(logger, "%s is a required parameter.", "front_right_wheel_name");
-            return controller_interface::CallbackReturn::ERROR;
-        }
-        if (params_.front_left_wheel_name == "")
-        {
-            RCLCPP_ERROR(logger, "%s is a required parameter.", "front_left_wheel_name");
+            RCLCPP_ERROR(logger, "%s is a required parameter.", "front_wheel_name");
             return controller_interface::CallbackReturn::ERROR;
         }
         if (params_.rear_right_wheel_name == "")
@@ -311,8 +308,7 @@ namespace omni_4wd_controller
             return controller_interface::CallbackReturn::ERROR;
         }
 
-        odometry_.setWheelParams(params_.wheel_width_separation, params_.wheel_height_separation, params_.wheel_radius);
-        odometry_.setFeedbackSlipCoefficient(params_.position_feedback_slip_xy_coefficient, params_.position_feedback_slip_yaw_coefficient);
+        odometry_.setWheelParams(params_.wheel_separation_from_robot_center, params_.wheel_radius);
         odometry_.setVelocityRollingWindowSize(params_.velocity_rolling_window_size);
 
         cmd_vel_timeout_ = std::chrono::milliseconds{static_cast<int>(params_.cmd_vel_timeout * 1000.0)};
@@ -492,20 +488,17 @@ namespace omni_4wd_controller
         return controller_interface::CallbackReturn::SUCCESS;
     }
 
-    controller_interface::CallbackReturn Omni4WDController::on_activate(
+    controller_interface::CallbackReturn Omni3WDController::on_activate(
         const rclcpp_lifecycle::State &)
     {
-        const auto front_left_result = configure_side("front left", params_.front_left_wheel_name, [&](WheelHandle wh)
-                                                      { registered_front_left_wheel_handles_ = std::make_shared<WheelHandle>(wh); });
-        const auto front_right_result = configure_side("front right", params_.front_right_wheel_name, [&](WheelHandle wh)
-                                                       { registered_front_right_wheel_handles_ = std::make_shared<WheelHandle>(wh); });
+        const auto front_result = configure_side("front", params_.front_wheel_name, [&](WheelHandle wh)
+                                                      { registered_front_wheel_handles_ = std::make_shared<WheelHandle>(wh); });
         const auto rear_left_result = configure_side("rear left", params_.rear_left_wheel_name, [&](WheelHandle wh)
                                                      { registered_rear_left_wheel_handles_ = std::make_shared<WheelHandle>(wh); });
         const auto rear_right_result = configure_side("rear right", params_.rear_right_wheel_name, [&](WheelHandle wh)
                                                       { registered_rear_right_wheel_handles_ = std::make_shared<WheelHandle>(wh); });
         if (
-            front_left_result == controller_interface::CallbackReturn::ERROR ||
-            front_right_result == controller_interface::CallbackReturn::ERROR ||
+            front_result == controller_interface::CallbackReturn::ERROR ||
             rear_left_result == controller_interface::CallbackReturn::ERROR ||
             rear_right_result == controller_interface::CallbackReturn::ERROR)
         {
@@ -519,7 +512,7 @@ namespace omni_4wd_controller
         return controller_interface::CallbackReturn::SUCCESS;
     }
 
-    controller_interface::CallbackReturn Omni4WDController::on_deactivate(
+    controller_interface::CallbackReturn Omni3WDController::on_deactivate(
         const rclcpp_lifecycle::State &)
     {
         subscriber_is_active_ = false;
@@ -531,7 +524,7 @@ namespace omni_4wd_controller
         return controller_interface::CallbackReturn::SUCCESS;
     }
 
-    controller_interface::CallbackReturn Omni4WDController::on_cleanup(
+    controller_interface::CallbackReturn Omni3WDController::on_cleanup(
         const rclcpp_lifecycle::State &)
     {
         if (!reset())
@@ -543,7 +536,7 @@ namespace omni_4wd_controller
         return controller_interface::CallbackReturn::SUCCESS;
     }
 
-    controller_interface::CallbackReturn Omni4WDController::on_error(const rclcpp_lifecycle::State &)
+    controller_interface::CallbackReturn Omni3WDController::on_error(const rclcpp_lifecycle::State &)
     {
         if (!reset())
         {
@@ -552,7 +545,7 @@ namespace omni_4wd_controller
         return controller_interface::CallbackReturn::SUCCESS;
     }
 
-    bool Omni4WDController::reset()
+    bool Omni3WDController::reset()
     {
         odometry_.resetOdometry();
 
@@ -569,26 +562,25 @@ namespace omni_4wd_controller
         return true;
     }
 
-    controller_interface::CallbackReturn Omni4WDController::on_shutdown(
+    controller_interface::CallbackReturn Omni3WDController::on_shutdown(
         const rclcpp_lifecycle::State &)
     {
         return controller_interface::CallbackReturn::SUCCESS;
     }
 
-    void Omni4WDController::halt()
+    void Omni3WDController::halt()
     {
         const auto halt_wheels = [](std::shared_ptr<WheelHandle> wheel_handle)
         {
             wheel_handle->velocity.get().set_value(0.0);
         };
 
-        halt_wheels(registered_front_left_wheel_handles_);
-        halt_wheels(registered_front_right_wheel_handles_);
+        halt_wheels(registered_front_wheel_handles_);
         halt_wheels(registered_rear_left_wheel_handles_);
         halt_wheels(registered_rear_right_wheel_handles_);
     }
 
-    controller_interface::CallbackReturn Omni4WDController::configure_side(
+    controller_interface::CallbackReturn Omni3WDController::configure_side(
         std::string side, std::string wheel_name,
         std::function<void(WheelHandle)> registered_handle_func)
     {
@@ -646,9 +638,9 @@ namespace omni_4wd_controller
         return controller_interface::CallbackReturn::SUCCESS;
     }
 
-} // namespace omni_4wd_controller
+} // namespace omni_3wd_controller
 
 #include "class_loader/register_macro.hpp"
 
 CLASS_LOADER_REGISTER_CLASS(
-    omni_4wd_controller::Omni4WDController, controller_interface::ControllerInterface)
+    omni_3wd_controller::Omni3WDController, controller_interface::ControllerInterface)
