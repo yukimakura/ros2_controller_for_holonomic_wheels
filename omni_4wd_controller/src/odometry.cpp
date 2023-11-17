@@ -83,12 +83,15 @@ namespace omni_4wd_controller
             1.0, 1.0, -1.0, -1.0,
             frameMathTerm, frameMathTerm, frameMathTerm, frameMathTerm;
 
+        Eigen::Vector3d tfmat(3, 3);
+        tfmat << cos(angular_), sin(angular_), 0.0;
+
         auto outputVec = (1.0 / 4.0) * wheelmat * wheelvec;
         // auto outputVecWithTf = tfmat.transposeInPlace() * outputVec;
 
         //  Compute linear and angular diff:
-        const double linear_x = position_feedback_slip_xy_coefficient_ * outputVec[0] * cos(angular_);
-        const double linear_y = position_feedback_slip_xy_coefficient_ * outputVec[1] * sin(angular_);
+        const double linear_x = position_feedback_slip_xy_coefficient_ * outputVec[0] * sin(angular_);
+        const double linear_y = position_feedback_slip_xy_coefficient_ * outputVec[1] * cos(angular_);
         // Now there is a bug about scout angular velocity
         const double angular = position_feedback_slip_yaw_coefficient_ * outputVec[2];
 
