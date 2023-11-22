@@ -11,12 +11,12 @@ namespace omni_4wd_controller
     class Odometry
     {
     public:
-        explicit Odometry(size_t velocity_rolling_window_size = 10);
+        explicit Odometry(std::function<void(std::string)> logInfoOutput, std::function<void(std::string)> logErrorOutput, size_t velocity_rolling_window_size = 10);
 
         void init(const rclcpp::Time &time);
-        bool update(double fr_pos, double rr_pos,double fl_pos, double rl_pos, const rclcpp::Time &time);
+        bool update(double fr_pos, double rr_pos, double fl_pos, double rl_pos, const rclcpp::Time &time);
         bool updateFromVelocity(double fr_vel, double rr_vel, double fl_vel, double rl_vel, const rclcpp::Time &time);
-        void updateOpenLoop(double linear_x,double linear_y, double angular, const rclcpp::Time &time);
+        void updateOpenLoop(double linear_x, double linear_y, double angular, const rclcpp::Time &time);
         void resetOdometry();
 
         double getX() const { return x_; }
@@ -26,14 +26,15 @@ namespace omni_4wd_controller
         double getLinearY() const { return linear_y_; }
         double getAngular() const { return angular_; }
 
-        void setWheelParams(double wheel_width_separation,double wheel_height_separation, double wheel_radius);
+        void setWheelParams(double wheel_width_separation, double wheel_height_separation, double wheel_radius);
+        void setFeedbackSlipCoefficient(double position_feedback_slip_xy_coefficient, double position_feedback_slip_yaw_coefficient);
         void setVelocityRollingWindowSize(size_t velocity_rolling_window_size);
 
     private:
         using RollingMeanAccumulator = rcppmath::RollingMeanAccumulator<double>;
 
-        void integrateRungeKutta2(double linear_x,double linear_y, double angular);
-        void integrateExact(double linear_x,double linear_y, double angular);
+        void integrateRungeKutta2(double linear_x, double linear_y, double angular);
+        void integrateExact(double linear_x, double linear_y, double angular);
         void resetAccumulators();
 
         // Current timestamp:
@@ -45,14 +46,17 @@ namespace omni_4wd_controller
         double heading_; // [rad]
 
         // Current velocity:
-        double linear_x_;  //   [m/s]
-        double linear_y_;  //   [m/s]
-        double angular_; // [rad/s]
+        double linear_x_; //   [m/s]
+        double linear_y_; //   [m/s]
+        double angular_;  // [rad/s]
 
         // Wheel kinematic parameters [m]:
         double wheel_width_separation_;
         double wheel_height_separation_;
         double wheel_radius_;
+
+        double position_feedback_slip_xy_coefficient_;
+        double position_feedback_slip_yaw_coefficient_;
 
         // Previous wheel position/state [rad]:
         double fr_wheel_old_pos_;
@@ -65,6 +69,9 @@ namespace omni_4wd_controller
         RollingMeanAccumulator linear_x_accumulator_;
         RollingMeanAccumulator linear_y_accumulator_;
         RollingMeanAccumulator angular_accumulator_;
+
+        std::function<void(std::string)> logInfoOutput_;
+        std::function<void(std::string)> logErrorOutput_;
     };
 
 } // namespace diff_drive_controller
