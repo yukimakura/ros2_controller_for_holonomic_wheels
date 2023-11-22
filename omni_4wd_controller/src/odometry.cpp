@@ -3,7 +3,7 @@
 #include "Eigen/LU"
 namespace omni_4wd_controller
 {
-    Odometry::Odometry(size_t velocity_rolling_window_size)
+    Odometry::Odometry(std::function<void(std::string)> logInfoOutput, std::function<void(std::string)> logErrorOutput, size_t velocity_rolling_window_size)
         : timestamp_(0.0),
           x_(0.0),
           y_(0.0),
@@ -23,7 +23,9 @@ namespace omni_4wd_controller
           velocity_rolling_window_size_(velocity_rolling_window_size),
           linear_x_accumulator_(velocity_rolling_window_size),
           linear_y_accumulator_(velocity_rolling_window_size),
-          angular_accumulator_(velocity_rolling_window_size)
+          angular_accumulator_(velocity_rolling_window_size),
+          logInfoOutput_(logInfoOutput),
+          logErrorOutput_(logErrorOutput)
     {
     }
 
@@ -83,15 +85,17 @@ namespace omni_4wd_controller
             1.0, 1.0, -1.0, -1.0,
             frameMathTerm, frameMathTerm, frameMathTerm, frameMathTerm;
 
-        Eigen::Vector3d tfmat(3, 3);
-        tfmat << cos(angular_), sin(angular_), 0.0;
+        Eigen::MatrixXd tfmat(3, 3);
+        tfmat << cos(heading_), sin(heading_), 0.0,
+            -sin(heading_), cos(heading_), 0.0,
+            0.0, 0.0, 1.0;
 
-        auto outputVec = (1.0 / 4.0) * wheelmat * wheelvec;
-        // auto outputVecWithTf = tfmat.transposeInPlace() * outputVec;
+        Eigen::Vector3d outputVec = (1.0 / 4.0) * wheelmat *  wheelvec;
+        auto outputVecWithTf = tfmat.inverse() * outputVec;
 
         //  Compute linear and angular diff:
-        const double linear_x = position_feedback_slip_xy_coefficient_ * outputVec[0] * sin(angular_);
-        const double linear_y = position_feedback_slip_xy_coefficient_ * outputVec[1] * cos(angular_);
+        const double linear_x = position_feedback_slip_xy_coefficient_ * outputVecWithTf[0];
+        const double linear_y = position_feedback_slip_xy_coefficient_ * outputVecWithTf[1];
         // Now there is a bug about scout angular velocity
         const double angular = position_feedback_slip_yaw_coefficient_ * outputVec[2];
 

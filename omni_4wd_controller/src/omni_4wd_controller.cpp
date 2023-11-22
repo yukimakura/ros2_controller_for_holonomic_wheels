@@ -36,7 +36,11 @@ namespace omni_4wd_controller
         return params_.position_feedback ? HW_IF_POSITION : HW_IF_VELOCITY;
     }
 
-    Omni4WDController::Omni4WDController() : controller_interface::ControllerInterface() {}
+    Omni4WDController::Omni4WDController() : controller_interface::ControllerInterface(),odometry_(Odometry([&](std::string msg)
+                                                                                                { RCLCPP_INFO(get_node()->get_logger(), msg.c_str()); },
+                                                                                                [&](std::string msg)
+                                                                                                { RCLCPP_ERROR(get_node()->get_logger(), msg.c_str()); }))
+    {}
 
     controller_interface::CallbackReturn Omni4WDController::on_init()
     {

@@ -86,11 +86,17 @@ namespace omni_3wd_controller
                     1.0 * sin(M_PI/3.0),0.5     ,wheel_separation_from_robot_center_,
                     -1.0 * sin(M_PI/3.0) ,0.5     ,wheel_separation_from_robot_center_;
 
+        Eigen::MatrixXd tfmat(3, 3);
+        tfmat << cos(heading_), sin(heading_), 0.0,
+            -sin(heading_), cos(heading_), 0.0,
+            0.0, 0.0, 1.0;
+
         auto outputVec = wheelmat.inverse() * wheelvec;
+        auto outputVecWithTf = tfmat.inverse() * outputVec;
 
         //  Compute linear and angular diff:
-        const double linear_x = outputVec[0];
-        const double linear_y = outputVec[1];
+        const double linear_x = outputVecWithTf[0];
+        const double linear_y = outputVecWithTf[1];
         // Now there is a bug about scout angular velocity
         const double angular = -1.0 * outputVec[2];
 

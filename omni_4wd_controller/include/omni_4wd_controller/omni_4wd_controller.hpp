@@ -39,41 +39,51 @@ namespace omni_4wd_controller
         Omni4WDController();
 
         Omni_4WD_CONTROLLER_PUBLIC
-        controller_interface::InterfaceConfiguration command_interface_configuration() const override;
+            controller_interface::InterfaceConfiguration
+            command_interface_configuration() const override;
 
         Omni_4WD_CONTROLLER_PUBLIC
-        controller_interface::InterfaceConfiguration state_interface_configuration() const override;
+            controller_interface::InterfaceConfiguration
+            state_interface_configuration() const override;
 
         Omni_4WD_CONTROLLER_PUBLIC
-        controller_interface::return_type update(
-            const rclcpp::Time &time, const rclcpp::Duration &period) override;
+            controller_interface::return_type
+            update(
+                const rclcpp::Time &time, const rclcpp::Duration &period) override;
 
         Omni_4WD_CONTROLLER_PUBLIC
-        controller_interface::CallbackReturn on_init() override;
+            controller_interface::CallbackReturn
+            on_init() override;
 
         Omni_4WD_CONTROLLER_PUBLIC
-        controller_interface::CallbackReturn on_configure(
-            const rclcpp_lifecycle::State &previous_state) override;
+            controller_interface::CallbackReturn
+            on_configure(
+                const rclcpp_lifecycle::State &previous_state) override;
 
         Omni_4WD_CONTROLLER_PUBLIC
-        controller_interface::CallbackReturn on_activate(
-            const rclcpp_lifecycle::State &previous_state) override;
+            controller_interface::CallbackReturn
+            on_activate(
+                const rclcpp_lifecycle::State &previous_state) override;
 
         Omni_4WD_CONTROLLER_PUBLIC
-        controller_interface::CallbackReturn on_deactivate(
-            const rclcpp_lifecycle::State &previous_state) override;
+            controller_interface::CallbackReturn
+            on_deactivate(
+                const rclcpp_lifecycle::State &previous_state) override;
 
         Omni_4WD_CONTROLLER_PUBLIC
-        controller_interface::CallbackReturn on_cleanup(
-            const rclcpp_lifecycle::State &previous_state) override;
+            controller_interface::CallbackReturn
+            on_cleanup(
+                const rclcpp_lifecycle::State &previous_state) override;
 
         Omni_4WD_CONTROLLER_PUBLIC
-        controller_interface::CallbackReturn on_error(
-            const rclcpp_lifecycle::State &previous_state) override;
+            controller_interface::CallbackReturn
+            on_error(
+                const rclcpp_lifecycle::State &previous_state) override;
 
         Omni_4WD_CONTROLLER_PUBLIC
-        controller_interface::CallbackReturn on_shutdown(
-            const rclcpp_lifecycle::State &previous_state) override;
+            controller_interface::CallbackReturn
+            on_shutdown(
+                const rclcpp_lifecycle::State &previous_state) override;
 
     protected:
         struct WheelHandle
@@ -141,6 +151,9 @@ namespace omni_4wd_controller
 
         bool reset();
         void halt();
+
+        std::function<void(std::string)> logInfoOutput_;
+        std::function<void(std::string)> logErrorOutput_;
     };
 } // namespace diff_drive_controller
 #endif // omni_4wd_CONTROLLER_HPP_
