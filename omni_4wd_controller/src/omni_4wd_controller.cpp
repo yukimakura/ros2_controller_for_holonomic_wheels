@@ -31,11 +31,6 @@ namespace omni_4wd_controller
     using hardware_interface::HW_IF_VELOCITY;
     using lifecycle_msgs::msg::State;
 
-    const char *Omni4WDController::feedback_type() const
-    {
-        return params_.position_feedback ? HW_IF_POSITION : HW_IF_VELOCITY;
-    }
-
     Omni4WDController::Omni4WDController() : controller_interface::ControllerInterface(),odometry_(Odometry([&](std::string msg)
                                                                                                 { RCLCPP_INFO(get_node()->get_logger(), msg.c_str()); },
                                                                                                 [&](std::string msg)
@@ -73,10 +68,10 @@ namespace omni_4wd_controller
     controller_interface::InterfaceConfiguration Omni4WDController::state_interface_configuration() const
     {
         std::vector<std::string> conf_names;
-        conf_names.push_back(params_.front_left_wheel_name + "/" + feedback_type());
-        conf_names.push_back(params_.front_right_wheel_name + "/" + feedback_type());
-        conf_names.push_back(params_.rear_left_wheel_name + "/" + feedback_type());
-        conf_names.push_back(params_.rear_right_wheel_name + "/" + feedback_type());
+        conf_names.push_back(params_.front_left_wheel_name + "/" + HW_IF_VELOCITY);
+        conf_names.push_back(params_.front_right_wheel_name + "/" + HW_IF_VELOCITY);
+        conf_names.push_back(params_.rear_left_wheel_name + "/" + HW_IF_VELOCITY);
+        conf_names.push_back(params_.rear_right_wheel_name + "/" + HW_IF_VELOCITY);
 
         return {controller_interface::interface_configuration_type::INDIVIDUAL, conf_names};
     }
@@ -153,7 +148,7 @@ namespace omni_4wd_controller
                 std::isnan(rl_feedback) ||
                 std::isnan(rr_feedback))
             {
-                RCLCPP_ERROR(logger, "Either the wheel %s is invalid", feedback_type());
+                RCLCPP_ERROR(logger, "Either the wheel %s is invalid", HW_IF_VELOCITY);
                 return controller_interface::return_type::ERROR;
             }
 
@@ -606,7 +601,7 @@ namespace omni_4wd_controller
             return controller_interface::CallbackReturn::ERROR;
         }
 
-        const auto interface_name = feedback_type();
+        const auto interface_name = HW_IF_VELOCITY;
         const auto state_handle = std::find_if(
             state_interfaces_.cbegin(), state_interfaces_.cend(),
             [&wheel_name, &interface_name](const auto &interface)

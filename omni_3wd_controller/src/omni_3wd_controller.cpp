@@ -27,14 +27,8 @@ namespace omni_3wd_controller
     using namespace std::chrono_literals;
     using controller_interface::interface_configuration_type;
     using controller_interface::InterfaceConfiguration;
-    using hardware_interface::HW_IF_POSITION;
     using hardware_interface::HW_IF_VELOCITY;
     using lifecycle_msgs::msg::State;
-
-    const char *Omni3WDController::feedback_type() const
-    {
-        return params_.position_feedback ? HW_IF_POSITION : HW_IF_VELOCITY;
-    }
 
     Omni3WDController::Omni3WDController() : controller_interface::ControllerInterface() {}
 
@@ -68,9 +62,9 @@ namespace omni_3wd_controller
     controller_interface::InterfaceConfiguration Omni3WDController::state_interface_configuration() const
     {
         std::vector<std::string> conf_names;
-        conf_names.push_back(params_.front_wheel_name + "/" + feedback_type());
-        conf_names.push_back(params_.rear_left_wheel_name + "/" + feedback_type());
-        conf_names.push_back(params_.rear_right_wheel_name + "/" + feedback_type());
+        conf_names.push_back(params_.front_wheel_name + "/" + HW_IF_VELOCITY);
+        conf_names.push_back(params_.rear_left_wheel_name + "/" + HW_IF_VELOCITY);
+        conf_names.push_back(params_.rear_right_wheel_name + "/" + HW_IF_VELOCITY);
 
         return {controller_interface::interface_configuration_type::INDIVIDUAL, conf_names};
     }
@@ -144,7 +138,7 @@ namespace omni_3wd_controller
                 std::isnan(rl_feedback) ||
                 std::isnan(rr_feedback))
             {
-                RCLCPP_ERROR(logger, "Either the wheel %s is invalid", feedback_type());
+                RCLCPP_ERROR(logger, "Either the wheel %s is invalid", HW_IF_VELOCITY);
                 return controller_interface::return_type::ERROR;
             }
 
@@ -265,6 +259,7 @@ namespace omni_3wd_controller
         auto f = outputVec[0] / wheel_radius;
         auto rl = outputVec[1] / wheel_radius;
         auto rr = outputVec[2] / wheel_radius;
+        
         try
         {
 
@@ -508,7 +503,7 @@ namespace omni_3wd_controller
         is_halted = false;
         subscriber_is_active_ = true;
 
-        RCLCPP_DEBUG(get_node()->get_logger(), "Subscriber and publisher are now active.");
+        RCLCPP_INFO(get_node()->get_logger(), "Subscriber and publisher are now active.");
         return controller_interface::CallbackReturn::SUCCESS;
     }
 
@@ -594,7 +589,7 @@ namespace omni_3wd_controller
             return controller_interface::CallbackReturn::ERROR;
         }
 
-        const auto interface_name = feedback_type();
+        const auto interface_name = HW_IF_VELOCITY;
         const auto state_handle = std::find_if(
             state_interfaces_.cbegin(), state_interfaces_.cend(),
             [&wheel_name, &interface_name](const auto &interface)
